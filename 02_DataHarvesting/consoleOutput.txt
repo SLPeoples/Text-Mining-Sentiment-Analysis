@@ -1,0 +1,611 @@
+
+R version 3.4.1 (2017-06-30) -- "Single Candle"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(twitteR)
+Warning message:
+package ‘twitteR’ was built under R version 3.4.3 
+> library(ROAuth)
+Warning message:
+package ‘ROAuth’ was built under R version 3.4.3 
+> library(RCurl)
+Loading required package: bitops
+> library(httr)
+Warning message:
+package ‘httr’ was built under R version 3.4.3 
+> 
+> library(stringr)
+Warning message:
+package ‘stringr’ was built under R version 3.4.3 
+> library(plyr)
+
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:twitteR’:
+
+    id
+
+Warning message:
+package ‘plyr’ was built under R version 3.4.3 
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise, summarize
+
+The following objects are masked from ‘package:twitteR’:
+
+    id, location
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package ‘dplyr’ was built under R version 3.4.3 
+> library(tm)
+Loading required package: NLP
+
+Attaching package: ‘NLP’
+
+The following object is masked from ‘package:httr’:
+
+    content
+
+Warning message:
+package ‘tm’ was built under R version 3.4.3 
+> key="baIhzmVzumgOLAk0NQJPzInwm"
+> secret="ibg1gkL5ubICCQlk8kfoXPSqaLJYr6RnkE05zqkU9thHEJKf0Q"
+> 
+> atoken =  "931541622180929537-9VLB6EKwjFhAi9GqGmpOHj2CRwMhhEz"
+> asecret = "wplG3WaW03sevXgAqeaPd6bSmRDIKPMAujmJh9CHCnEHM"
+> 
+> setup_twitter_oauth(key, secret, atoken, asecret)
+[1] "Using direct authentication"
+Use a local file ('.httr-oauth'), to cache OAuth access credentials between R sessions?
+
+1: Yes
+2: No
+
+Selection: 1
+Adding .httr-oauth to .gitignore
+> library("stringr")
+> 
+> library("plyr")
+> sentimentfun = function(tweettext, pos, neg, .progress='non')
++ {
++   # Parameters
++   # tweettext: vector of text to score
++   # pos: vector of words of postive sentiment
++   # neg: vector of words of negative sentiment
++   # .progress: passed to laply() 4 control of progress bar
++   
++   # create simple array of scores with laply
++   scores = laply(tweettext,
++                  function(singletweet, pos, neg)
++                  {
++                    # remove punctuation - using global substitute
++                    singletweet = gsub("[[:punct:]]", "", singletweet)
++                    # remove control characters
++                    singletweet = gsub("[[:cntrl:]]", "", singletweet)
++                    # remove digits
++                    singletweet = gsub("\\d+", "", singletweet)
++                    
++                    # define error handling function when trying tolower
++                    tryTolower = function(x)
++                    {
++                      # create missing value
++                      y = NA
++                      # tryCatch error
++                      try_error = tryCatch(tolower(x), error=function(e) e)
++                      # if not an error
++                      if (!inherits(try_error, "error"))
++                        y = tolower(x)
++                      # result
++                      return(y)
++                    }
++                    # use tryTolower with sapply 
++                    singletweet = sapply(singletweet, tryTolower)
++                    
++                    # split sentence into words with str_split (stringr package)
++                    word.list = str_split(singletweet, "\\s+")
++                    words = unlist(word.list)
++                    
++                    # compare words to the dictionaries of positive & negative terms
++                    pos.matches = match(words, pos)
++                    neg.matches = match(words, neg)
++                    
++                    # get the position of the matched term or NA
++                    # we just want a TRUE/FALSE
++                    pos.matches = !is.na(pos.matches)
++                    neg.matches = !is.na(neg.matches)
++                    
++                    # final score
++                    score = sum(pos.matches) - sum(neg.matches)
++                    return(score)
++                  }, pos, neg, .progress=.progress )
++   
++   # data frame with scores for each sentence
++   sentiment.df = data.frame(text=tweettext, score=scores)
++   return(sentiment.df)
++ }
+> pos = readLines("positive_words.txt")
+Warning message:
+In readLines("positive_words.txt") :
+  incomplete final line found on 'positive_words.txt'
+> neg = readLines("negative_words.txt")
+Warning message:
+In readLines("negative_words.txt") :
+  incomplete final line found on 'negative_words.txt'
+> pos = readLines("positive_words.txt")
+> neg = readLines("negative_words.txt")
+> neg2 = c(neg, "bearish", "fraud"); tail(neg2)
+[1] "zealot"    "zealous"   "zealously" "zombie"    "bearish"   "fraud"    
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+ Show Traceback
+ 
+ Rerun with Debug
+ Error in inherits(.data, "split") : object 'tweettext' not found > tweets = searchTwitter("apple+iphone", n=2000, 
++                        lang="en", 
++                        geocode="34.052,-118.244,200mi",
++                        since = "2017-12-04")
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=====================================================================================| 100%
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Apple Iphone",
++                          city = "Los Angeles", country = "USA"))
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> ## create file to wd
+> write.csv(data, file= "apple_langeles.csv")
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="40.713,-74.006,200mi",
++                       since = "2017-12-04")
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=====================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Apple Iphone",
++                          city = "New York", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "apple_newyork.csv")
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="30.267,-97.743,200mi",
++                       since = "2017-12-04")
+Warning message:
+In doRppAPICall("search/tweets", n, params = params, retryOnRateLimit = retryOnRateLimit,  :
+  2000 tweets were requested but the API can only return 1243
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="30.267,-97.743,400mi",
++                       since = "2017-12-04")
+Warning message:
+In doRppAPICall("search/tweets", n, params = params, retryOnRateLimit = retryOnRateLimit,  :
+  2000 tweets were requested but the API can only return 1727
+> #   Austin
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="30.267,-97.743,500mi",
++                       since = "2017-12-04")
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=====================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> 
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Apple Iphone",
++                          city = "Austin", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "apple_austin.csv")
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="47.606,-122.332,200mi",
++                       since = "2017-12-04")
+Warning message:
+In doRppAPICall("search/tweets", n, params = params, retryOnRateLimit = retryOnRateLimit,  :
+  2000 tweets were requested but the API can only return 714
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="47.606,-122.332,500mi",
++                       since = "2017-12-04")
+Warning message:
+In doRppAPICall("search/tweets", n, params = params, retryOnRateLimit = retryOnRateLimit,  :
+  2000 tweets were requested but the API can only return 775
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="47.606,-122.332,1000mi",
++                       since = "2017-12-04")
+> tweets =searchTwitter("apple+iphone", n=2000, 
++                       lang="en", 
++                       geocode="47.606,-122.332,500mi",
++                       since = "2017-12-04")
+Warning message:
+In doRppAPICall("search/tweets", n, params = params, retryOnRateLimit = retryOnRateLimit,  :
+  2000 tweets were requested but the API can only return 775
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=====================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> 
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Apple Iphone",
++                          city = "Seattle", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "apple_seattle.csv")
+> tweets = searchTwitter("samsung+galaxy", n=2000, 
++                        lang="en", 
++                        geocode="34.052,-118.244,200mi",
++                        since = "2017-12-04")
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> 
+> 
+> # getting the opinion lexicons from working directory
+> pos = readLines("positive_words.txt")
+> neg = readLines("negative_words.txt")
+> 
+> neg2 = c(neg, "bearish", "fraud"); tail(neg2)
+[1] "zealot"    "zealous"   "zealously" "zombie"    "bearish"   "fraud"    
+> 
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=====================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> 
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Samsung Galaxy",
++                          city = "Los Angeles", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "samsung_losangeles.csv")
+> tweets =searchTwitter("samsung+galaxy", n=2000, 
++                       lang="en", 
++                       geocode="40.713,-74.006,200mi",
++                       since = "2017-12-04")
+[1] "Rate limited .... blocking for a minute and retrying up to 119 times ..."
+[1] "Rate limited .... blocking for a minute and retrying up to 118 times ..."
+[1] "Rate limited .... blocking for a minute and retrying up to 117 times ..."
+[1] "Rate limited .... blocking for a minute and retrying up to 116 times ..."
+[1] "Rate limited .... blocking for a minute and retrying up to 115 times ..."
+[1] "Rate limited .... blocking for a minute and retrying up to 114 times ..."
+[1] "Rate limited .... blocking for a minute and retrying up to 113 times ..."
+
+> tweets =searchTwitter("samsung+galaxy", n=2000, 
++                       lang="en", 
++                       geocode="40.713,-74.006,200mi",
++                       since = "2017-12-04")
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> 
+> 
+> # getting the opinion lexicons from working directory
+> pos = readLines("positive_words.txt")
+> neg = readLines("negative_words.txt")
+> 
+> neg2 = c(neg, "bearish", "fraud"); tail(neg2)
+[1] "zealot"    "zealous"   "zealously" "zombie"    "bearish"   "fraud"    
+> 
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> 
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Samsung Galaxy",
++                          city = "New York", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "samsung_newyork.csv")
+> tweets =searchTwitter("samsung+galaxy", n=2000, 
++                       lang="en", 
++                       geocode="30.267,-97.743,500mi",
++                       since = "2017-12-04")
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> 
+> 
+> # getting the opinion lexicons from working directory
+> pos = readLines("positive_words.txt")
+> neg = readLines("negative_words.txt")
+> 
+> neg2 = c(neg, "bearish", "fraud"); tail(neg2)
+[1] "zealot"    "zealous"   "zealously" "zombie"    "bearish"   "fraud"    
+> 
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> 
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Samsung Galaxy",
++                          city = "Austin", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "samsung_austin.csv")
+> tweets =searchTwitter("samsung+galaxy", n=2000, 
++                       lang="en", 
++                       geocode="47.606,-122.332,1000mi",
++                       since = "2017-12-04")
+> tweets =searchTwitter("samsung+galaxy", n=2000, 
++                       lang="en", 
++                       geocode="47.606,-122.332,500mi",
++                       since = "2017-12-04")
+Warning message:
+In doRppAPICall("search/tweets", n, params = params, retryOnRateLimit = retryOnRateLimit,  :
+  2000 tweets were requested but the API can only return 1778
+> # extracting the text
+> tweettext = sapply(tweets, function(x) x$getText())
+> 
+> ## first cleaning stage
+> 
+> tweettext=lapply(tweettext, function(x) iconv(x, "latin1", 
++                                               "ASCII", sub=""))
+> tweettext=lapply(tweettext, function(x) gsub("htt.*",' ',x))
+> tweettext=lapply(tweettext, function(x) gsub("#",'',x))
+> tweettext=unlist(tweettext)
+> 
+> 
+> # getting the opinion lexicons from working directory
+> pos = readLines("positive_words.txt")
+> neg = readLines("negative_words.txt")
+> 
+> neg2 = c(neg, "bearish", "fraud"); tail(neg2)
+[1] "zealot"    "zealous"   "zealously" "zombie"    "bearish"   "fraud"    
+> 
+> ## apply function score.sentiment
+> scores = sentimentfun(tweettext, pos, neg, .progress='text')
+  |=================================================================================| 100%
+> 
+> ## extracting further elements (besides text) for the export csv
+> tweetdate=lapply(tweets, function(x) x$getCreated())
+> tweetdate=sapply(tweetdate,function(x) strftime(x, format="%Y-%m-%d %H:%M:%S",tz = "UTC"))
+> 
+> isretweet=sapply(tweets, function(x) x$getIsRetweet())
+> 
+> retweetcount=sapply(tweets, function(x) x$getRetweetCount())
+> 
+> favoritecount=sapply(tweets, function(x) x$getFavoriteCount())
+> 
+> ## Creating the Data Frame
+> data=as.data.frame(cbind(ttext=tweettext,
++                          date=tweetdate,
++                          isretweet=isretweet, 
++                          retweetcount=retweetcount,
++                          favoritecount=favoritecount,
++                          score = scores$score,
++                          product = "Samsung Galaxy",
++                          city = "Seattle", country = "USA"))
+> 
+> ## remove duplicates
+> data2 = duplicated(data[,1])
+> 
+> data$duplicate = data2
+> 
+> ## create file to wd
+> write.csv(data, file= "samsung_seattle.csv")
