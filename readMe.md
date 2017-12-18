@@ -4,6 +4,8 @@ This course harnesses the upside of R and Tableau to do sentiment analysis on Tw
 
 While R can directly fetch the text data from Twitter, clean and analyze it, Tableau is great at visualizing the data. And that is the power of the method outlined in this course. You get the best of both worlds, a dream team.
 
+This course will compare two mobile devices (Apple iPhone, Samsung Galaxy) based on twitter opinions in Seattle, Vancouver, Portland, and Los Angeles. Harvesting ~2000 tweets for each product. Visualizations are then developed in Tableau.
+
 # Content overview and course structure:
 
 The R Side:
