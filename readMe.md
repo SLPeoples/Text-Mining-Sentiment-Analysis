@@ -6,7 +6,7 @@ While R can directly fetch the text data from Twitter, clean and analyze it, Tab
 
 # Content overview and course structure:
 
-* The R Side
+The R Side:
 
 * Getting a Twitter developers account
 
