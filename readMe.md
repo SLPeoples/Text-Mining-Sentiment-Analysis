@@ -1,6 +1,10 @@
-# Text Mining and Sentiment Analysis, Scraping from Twitter, analysis using R and Tableau
+# Text Mining and Sentiment Analysis
 
-Tableau dashboard:
+## Data Science with R and Tableau: Extract valuable info out of Twitter to rock in marketing, finance, or any research.
+
+https://www.udemy.com/text-mining-and-sentiment-analysis-with-tableau-and-r/
+
+## Tableau dashboard:
 
 https://public.tableau.com/profile/samuel.l.peoples#!/vizhome/TwitterSentimentAnalysis_4/SentimentAnalysis
 
