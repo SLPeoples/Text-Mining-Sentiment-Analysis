@@ -1,3 +1,13 @@
+# Text Mining and Sentiment Analysis
+
+## Data Science with R and Tableau: Extract valuable info out of Twitter to rock in marketing, finance, or any research.
+
+https://www.udemy.com/text-mining-and-sentiment-analysis-with-tableau-and-r/
+
+## Tableau dashboard:
+
+https://public.tableau.com/profile/samuel.l.peoples#!/vizhome/TwitterSentimentAnalysis_4/SentimentAnalysis
+
 Extract valuable info out of Twitter for marketing, finance, academic or professional research and much more.
 
 This course harnesses the upside of R and Tableau to do sentiment analysis on Twitter data. With sentiment analysis you find out if the crowd has a rather positive or negative opinion towards a given search term. This search term can be a product (like in the course) but it can also be a person, region, company or basically anything as long as it is mentioned regularly on Twitter.
